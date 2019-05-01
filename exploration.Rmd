@@ -7,7 +7,8 @@ output: html_notebook
 
 <!-- Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*.  -->
 
-### 1. Import des donnees
+## 1. Import des donnees
+## 1.1. Lecture des donnees
 ```{r}
 library(readr)
 glasses <- read_csv("donnees/glasses.csv")
@@ -15,6 +16,143 @@ report <- read_csv("donnees/report.csv")
 smartphone <- read_csv("donnees/smartphone.csv")
 smartwatch <- read_csv("donnees/smartwatch.csv")
 ```
+
+
+### 1.2. Donnees smartwatch
+#### 1.2.1 Selection et mise en tableau individu/variable des donnees
+```{r}
+smartwatch <- subset(smartwatch, smartwatch$source=="battery" | smartwatch$source=="heart_rate" |smartwatch$source=="step_counter" |smartwatch$source=="step_detector")
+
+
+
+smartwatch$battery <- as.numeric(NA)
+smartwatch$heart_rate <- as.numeric(NA)
+smartwatch$step_counter <- as.numeric(NA)
+smartwatch$step_detector <- as.numeric(NA)
+# On pourrait chosisir d'autres variables aussi comme gyroscope_x, gyroscope_y gyroscope_z... mais pour l'instant on se limite on donnees presentees dans la publication.
+
+
+# Les packages sont a installer si ce n'est pas deja fait
+library(rjson)
+library(R.utils)
+
+
+for (i in 1:nrow(smartwatch)){
+  s <- smartwatch$values[i]
+  s <- gsub("'", "\"", s)
+  s <- gsub('\"', "", s, fixed = TRUE)
+  s <- as.vector(fromJSON(s))
+  values <- c()
+  for (x in s){values <- append(values,x)}
+
+
+  if (smartwatch$source[i]=="battery"){
+    smartwatch$battery[i]<- values[1]
+
+  } else if (smartwatch$source[i]=="pressure"){
+    smartwatch$pressure[i]<- values[1]
+
+  } else if (smartwatch$source[i]=="heart_rate"){
+    smartwatch$heart_rate[i]<- values[1]
+
+  } else if (smartwatch$source[i]=="step_counter"){
+    smartwatch$step_counter[i]<- values[1]
+
+  } else if (smartwatch$source[i]=="step_detector"){
+    smartwatch$step_detector[i]<- values[1]
+
+  # } else if (smartwatch$source[i]=="accelerometer"){
+  #   smartwatch$accelerometer_x[i]<- values[1]
+  #   smartwatch$accelerometer_y[i]<- values[2]
+  #   smartwatch$accelerometer_z[i]<- values[3]
+  # 
+  # } else if (smartwatch$source[i]=="gravity"){
+  #   smartwatch$gravity_x[i]<- values[1]
+  #   smartwatch$gravity_y[i]<- values[2]
+  #   smartwatch$gravity_z[i]<- values[3]
+  # 
+  # } else if (smartwatch$source[i]=="linear_acceleration"){
+  #   smartwatch$linear_acceleration_x[i]<- values[1]
+  #   smartwatch$linear_acceleration_y[i]<- values[2]
+  #   smartwatch$linear_acceleration_z[i]<- values[3]
+  # 
+  # } else if (smartwatch$source[i]=="gyroscope"){
+  #   smartwatch$gyroscope_x[i]<- values[1]
+  #   smartwatch$gyroscope_y[i]<- values[2]
+  #   smartwatch$gyroscope_z[i]<- values[3]
+  # 
+  # } else if (smartwatch$source[i]=="rotation_vector"){
+  #   smartwatch$rotation_vector_x[i]<- values[1]
+  #   smartwatch$rotation_vector_y[i]<- values[2]
+  #   smartwatch$rotation_vector_z[i]<- values[3]
+  # 
+  # } else if (smartwatch$source[i]=="orientation"){
+  #   smartwatch$orientation_x[i]<- values[1]
+  #   smartwatch$orientation_y[i]<- values[2]
+  #   smartwatch$orientation_z[i]<- values[3]
+  # 
+  # } else if (smartwatch$source[i]=="magnetometer"){
+  #   smartwatch$magnetometer_x[i]<- values[1]
+  #   smartwatch$magnetometer_y[i]<- values[2]
+  #   smartwatch$magnetometer_z[i]<- values[3]
+  }
+
+}
+
+```
+
+
+#### 1.2.2 Calcul des moyennes par minutes
+
+On choisi de ne considerer que les moyennes par minutes. Le choix de ce grain nous permet de reduire considerablement la taille de l'ensemble de donnees (divisee par 10) tout en conservant l'information portee par les donnees.
+
+```{r}
+#Le package openair est a installer si ce n'est pas deja fait
+library(openair)
+colnames(smartwatch)[colnames(smartwatch)=="timestamp"] <- "date"
+smartwatch <- timeAverage(smartwatch, avg.time = "min")
+
+
+```
+
+
+#### 1.2.3 Jointure avec le dataset report
+
+On effectue cette jointure afin d'ettiqueter les individus (mesures a un timestamp donne) afin par la suite de pouvoir effectuer un apprentissage supervise.
+
+```{r}
+# library(lubridate)
+# 
+# smartwatch$activity_index <- as.numeric(NA)
+# smartwatch$activity_type <- as.numeric(NA)
+# 
+# for (i in 1:nrow(report)) {
+#   for (j in 1:100) {
+#     if (is.na(smartwatch$activity_index[j]) && (smartwatch$timestamp[j] %within% interval(report$from[i],report$to[i]))) {
+#       smartwatch$activity_index[j]<- i
+#       print(i)
+#       print(report$activity_type[i])
+#       smartwatch$activity_type[j]<-report$activity_type[i]
+#     }
+#   }
+# }
+```
+
+```{r}
+# library(lubridate)
+# for (i in 1:nrow(smartwatch)) {
+#   for (j in 1:nrow(report)) {
+#     if (smartwatch$timestamp[i] %within% interval(report$from[j],report$to[j])) {
+#       print(smartwatch$timestamp[i])
+#       print(interval(report$from[j],report$to[j]))
+#       print(interval(report$activity_type[j]))
+#     }
+#   }
+# }
+```
+
+
+
 
 <!-- Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*. -->
 
