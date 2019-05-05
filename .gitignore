@@ -3,3 +3,7 @@
 .RData
 .Ruserdata
 /donnees
+
+.DS_Store
+*.utf8.md
+*.knit.md
