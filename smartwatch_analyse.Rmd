@@ -1,0 +1,118 @@
+---
+title: "Analyse des donnees smatrwatch"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+### Recuperation des donnees (tableau individus/variables)
+
+```{r}
+library(readr)
+smartwatch <- read_csv("./smartwatch_indiv_var.csv")
+smartwatch$activity_type <- as.factor(smartwatch$activity_type)
+```
+
+### On retire les individus pour lesquels on a aucune mesure
+
+```{r}
+smartwatch <- subset(smartwatch, (!( (is.na(smartwatch[,3])) & (is.na(smartwatch[,4])) & (is.na(smartwatch[,5])) & (is.na(smartwatch[,6])))))
+
+
+smartwatch_labelled <- subset(smartwatch, (!is.na(smartwatch$activity_type)))
+```
+
+### Proportion d'individus ettiquettes (mesures dont on connait l'activite correspondante)
+
+```{r}
+sum(is.na(smartwatch$activity_type))/length(smartwatch$activity_type)
+```
+
+Pour 45% des mesures collectees par la smartwatch, on ne connait pas l'activite correspondante. On peut se donner pour objectif de construire un modele predictif de l'activite du porteur de la smartwatch en focntion des mesures realisee par celle-ci.
+
+### Exploration des mesures pour chaque type d'activite
+
+```{r}
+for(activity in unique(smartwatch_labelled$activity_type)) {
+  print(activity)
+  print(summary(smartwatch_labelled[smartwatch_labelled[, "activity_type"] == activity, c(3,4,5)]))
+  print('Nombre de mesures totale:')
+  print(nrow(smartwatch_labelled[smartwatch_labelled[, "activity_type"] == activity,]))
+  print('Nombre d evenements:')
+  print(nrow(unique(smartwatch_labelled[smartwatch_labelled[, "activity_type"] == activity,"activity_index"])))
+  cat("\n \n \n")
+  # boxplot(smartwatch_labelled[smartwatch_labelled[, "activity_type"] == activity, 3])
+}
+
+plot(x = smartwatch_labelled$date, y = smartwatch_labelled$battery)
+```
+
+
+## Imputation des donnees manquantes
+
+On remplace les mesures manquantes de rythme cardiaque et de batterie par la moyenne correspondant sur un evenement donne.
+
+```{r}
+for(activity_index in unique(smartwatch_labelled$activity_index)) {
+  x <- smartwatch_labelled[smartwatch_labelled[, "activity_index"] == activity_index,]
+
+  for (i in 1:nrow(x)){
+    if (is.na(x[i,"heart_rate"])){
+      if (!is.nan(mean(x$heart_rate[!is.na(x$heart_rate)], na.rm = TRUE))){
+        x[i,"heart_rate"] <- mean(x$heart_rate[!is.na(x$heart_rate)], na.rm = TRUE)
+      }
+    }
+    if (is.na(x[i,"battery"])){
+      if (!is.nan(mean(x$battery[!is.na(x$hearbatteryt_rate)], na.rm = TRUE))){
+        x[i,"battery"] <- mean(x$battery[!is.na(x$battery)], na.rm = TRUE)
+      }
+    }
+    if (is.na(x[i,"step_detector"])){
+      x[i,"step_detector"] <- 0
+    }
+  }
+  smartwatch_labelled[smartwatch_labelled[, "activity_index"] == activity_index,] <- x
+}
+
+smartwatch_labelled <- smartwatch_labelled[complete.cases(smartwatch_labelled[,c(3,4,6)]),]
+```
+
+
+
+Une premiere classification simple avec KNN
+
+```{r}
+X <- smartwatch_labelled[,c(3,4,6,8)]
+X <- X[sample(nrow(X)),]
+X[c(1,2)] <- scale(X[c(1,2)], center = TRUE) 
+X_labels <- X$activity_type
+X$activity_type <- as.numeric(X$activity_type)
+
+
+X_train <- X[1:3000, c(1,2,3)]
+X_test <- X[3001:3561,c(1,2,3)]
+
+X_train_labels <- X_labels[1:3000]
+X_test_labels <- X_labels[3001:3561]
+
+```
+
+
+```{r}
+library(class)
+prediction <- knn(train = X_train, test = X_test, cl = as.numeric(X_train_labels), k=5)
+```
+
+
+```{r}
+library("gmodels")
+# CrossTable(x = X_test_labels, y = prediction,  max.width = 5)
+tb <- table(prediction,X_test_labels)
+accuracy <- function(x){sum(diag(x)/(sum(rowSums(x)))) * 100}
+accuracy(tb)
+```
+
