@@ -26,7 +26,7 @@ smartwatch <- subset(smartwatch, (!( (is.na(smartwatch[,3])) & (is.na(smartwatch
 smartwatch_labelled <- subset(smartwatch, (!is.na(smartwatch$activity_type)))
 ```
 
-### Proportion d'individus ettiquettes (mesures dont on connait l'activite correspondante)
+### Proportion d'individus etiquettes (mesures dont on connait l'activite correspondante)
 
 ```{r}
 sum(is.na(smartwatch$activity_type))/length(smartwatch$activity_type)
