@@ -1,0 +1,116 @@
+---
+title: "Exploration Smartwatch"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+  
+## Installation des packages
+```{r}
+install.packages("stringr", dependencies=TRUE)
+library(stringr)
+```
+
+### 1.3. Donnees glasses
+
+Dans ce dataset, nous avons des données mesurées par un accéléromètre, un gyroscope, et un capteur d'électrooculographie
+```{r}
+# !diagnostics off
+```
+
+```{r, results='hide'}
+library(readr)
+glasses <- read_csv("donnees/glasses.csv")
+```
+
+```{r}
+head(glasses)
+```
+
+```{r}
+length(glasses$NUM)
+```
+
+Le dataset fait plus de 3 millions de lignes (presque 4 millions).
+
+Ici, on commence par prendre une sous-partie du dataset, pour pouvoir travailler de manière efficace. Nous avons donc choisi de se concentrer sur les données d'une journée ( déjà 383503 lignes de données). Nous estimons qu'e prendre qu'un échantillon d'une journée etst suffisamment représentatif pour cette première étape de découverte des données.
+
+```{r}
+glasses_s <- glasses[str_detect(glasses$DATE, "^2017/06/29.*"),]
+glasses_s
+```
+```{r}
+nrow(glasses)
+```
+
+### Données gyroscope
+
+```{r}
+library(dplyr)
+glasses_s.gyro <- select(glasses_s, DATE, GYRO_X, GYRO_Y, GYRO_Z)
+glasses_s.gyro
+```
+
+```{r}
+glasses_xs <- glasses_s.gyro[1:1000,]
+glasses_xs
+#toplot <- table(glasses_xs$DATE,glasses_xs$GYRO_X)
+```
+M
+```{r}
+colours <- c("blue", "red", "green")
+toplot <- table(glasses_xs$GYRO_X, glasses_xs$GYRO_Y, glasses_xs$GYRO_Z)
+plot(glasses_xs$GYRO_X, type="l", col=colours)
+#plot(glasses_xs$GYRO_X~as.Date(sales$date,"%d/%m/%y"),type="l",xlab="Date",ylab="Units Sold")
+```
+
+```{r}
+date <- as.Date("2017/06/29 08:00:00.586", "2017/06/29 %h:%m:%s")
+date
+### FAUX
+```
+
+### données d'acceleromètre
+
+```{r}
+library(dplyr)
+glasses_s.acc.gyro <- select(glasses_s, DATE, ACC_X, ACC_Y, ACC_Z, GYRO_X, GYRO_Y, GYRO_Z)
+glasses_s.acc.gyro
+```
+
+```{r}
+glasses_s.acc.gyro$ACC_TOT <- as.numeric(NA)
+```
+
+```{r}
+# install.packages("R.utils")
+total <- 20
+# create progress bar
+pb <- txtProgressBar(min = 0, max = total, style = 3)
+for(i in 1:total){
+   Sys.sleep(0.1)
+   # update progress bar
+   setTxtProgressBar(pb, i)
+}
+close(pb)
+# 
+```
+
+```{r}
+for (i in 1:nrow(glasses_s.acc.gyro)){
+  glasses_s.acc.gyro$ACC_TOT[i] <- sqrt((glasses_s.acc.gyro$ACC_X[i])**2 + (glasses_s.acc.gyro$ACC_Y[i])**2 + (glasses_s.acc.gyro$ACC_Z[i])**2)
+  }
+head(glasses_s.acc.gyro)
+```
+
+```{r}
+plot 
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
