@@ -1,3 +1,6 @@
+In this project we (myself and two fellow students) explored, analysed and modelled data from a smartwatch, a spartphone and smartglasses with the objective explaining and predicting the activity of the person wearing the devices. A detailed report of our
+work and results can be found in the attached PDF report alongside our python and R developments.
+
 Project folder structure:
     
     projet_sy09/
